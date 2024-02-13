@@ -1,9 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends
-from models import Todo, UpdateTodo
+from .models import Todo, TodoCreate, TodoUpdate
 from typing import Annotated, List
 from sqlmodel import Session, select
-from database import create_tables, create_session
-from database import app
+from database import create_tables, create_session, app
 
 
 @app.on_event("startup")
@@ -11,7 +10,7 @@ async def on_startup():
     create_tables()
 
 
-@app.get("/todo/{todo_id}")
+@app.get("/todo/{todo_id}", response_model=Todo)
 def get_todo_by_id(todo_id: int, session: Annotated[Session, Depends(create_session)]):
 
     todo = session.get(Todo, todo_id)
@@ -29,7 +28,7 @@ def read_todos(session: Annotated[Session, Depends(create_session)]):
 
 
 @app.post("/todo", response_model=Todo)
-def create_todo(todo: Todo, session: Annotated[Session, Depends(create_session)]):
+def create_todo(todo: TodoCreate, session: Annotated[Session, Depends(create_session)]):
 
     todo_to_insert = Todo.model_validate(todo)
     session.add(todo_to_insert)
@@ -38,8 +37,8 @@ def create_todo(todo: Todo, session: Annotated[Session, Depends(create_session)]
     return todo_to_insert
 
 
-@app.patch("/todo/{todo_id}", response_model=UpdateTodo)
-def update_todo(todo_id: int, todo: UpdateTodo, session: Annotated[Session, Depends(create_session)]):
+@app.patch("/todo/{todo_id}", response_model=Todo)
+def update_todo(todo_id: int, todo: TodoUpdate, session: Annotated[Session, Depends(create_session)]):
     todo_to_update = session.get(Todo, todo_id)
     if not todo_to_update:
         raise HTTPException(
