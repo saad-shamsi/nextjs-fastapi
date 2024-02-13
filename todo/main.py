@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Depends
-from .models import Todo, TodoCreate, TodoUpdate
+from models import Todo, TodoCreate, TodoUpdate
 from typing import Annotated, List
 from sqlmodel import Session, select
 from database import create_tables, create_session, app
+from typing import Optional
 
 
 @app.on_event("startup")
@@ -39,17 +40,19 @@ def create_todo(todo: TodoCreate, session: Annotated[Session, Depends(create_ses
 
 @app.patch("/todo/{todo_id}", response_model=Todo)
 def update_todo(todo_id: int, todo: TodoUpdate, session: Annotated[Session, Depends(create_session)]):
-    todo_to_update = session.get(Todo, todo_id)
+    todo_to_update: Optional[Todo] = session.get(Todo, todo_id)
     if not todo_to_update:
         raise HTTPException(
-            status_code=404, detail="bad request no todo found!")
+            status_code=404, detail="Todo not found!")
 
-    todo_to_update = todo.model_dump(exclude_unset=True)
-    for key, value in todo_to_update.items():
-        setattr(todo_to_update, key, value)
-    session.add(todo_to_update)
-    session.commit()
-    session.refresh(todo_to_update)
+    if isinstance(todo_to_update, Todo):
+        update_data = todo.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(todo_to_update, key, value)
+
+        session.add(todo_to_update)
+        session.commit()
+        session.refresh(todo_to_update)
     return todo_to_update
 
 

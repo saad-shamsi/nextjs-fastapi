@@ -22,6 +22,6 @@ class TodoCreate(SQLModel):
 
 
 class TodoUpdate(SQLModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    completed: bool | None = None
